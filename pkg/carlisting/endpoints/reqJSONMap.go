@@ -1,28 +1,30 @@
 package endpoints
 
-// type GetRequest struct {
-// 	Filters []internal.Filter `json:"filters,omitempty"`
-// }
+import "github.com/Farhan-slurrp/go-car/internal"
 
-type GetResponse struct {
-	Int int    `json:"Int"`
-	Err string `json:"err,omitempty"`
+type GetRequest struct {
+	Filters []internal.Filter `json:"filters"`
 }
 
-type ListNewCarRequest struct {
+type GetResponse struct {
+	Cars []internal.CarListing `json:"cars"`
+	Err  string                `json:"err,omitempty"`
+}
+
+type CreateListingRequest struct {
 	B int `json:"B"`
 }
 
-type ListNewCarResponse struct {
+type CreateListingResponse struct {
 	Int int    `json:"Int"`
 	Err string `json:"err,omitempty"`
 }
 
-type SetAvailabilityRequest struct {
+type UpdateListingRequest struct {
 	Dates string `json:"dates"`
 }
 
-type SetAvailabilityResponse struct {
+type UpdateListingResponse struct {
 	Int int    `json:"Int"`
 	Err string `json:"err,omitempty"`
 }

@@ -2,11 +2,12 @@ package carlisting
 
 import (
 	"context"
+
+	"github.com/Farhan-slurrp/go-car/internal"
 )
 
 type Service interface {
-	// Get the list of all documents
-	Get(ctx context.Context) (int, error)
-	ListNewCar(ctx context.Context, b int) (int, error)
-	SetAvailability(ctx context.Context, Dates string) (int, error)
+	Get(ctx context.Context, filters ...internal.Filter) ([]internal.CarListing, error)
+	CreateListing(ctx context.Context, b int) (int, error)
+	UpdateListing(ctx context.Context, Dates string) (int, error)
 }

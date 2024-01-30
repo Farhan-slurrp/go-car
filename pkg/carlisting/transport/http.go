@@ -5,20 +5,35 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/Farhan-slurrp/go-car/database"
+	"github.com/Farhan-slurrp/go-car/internal"
 	"github.com/Farhan-slurrp/go-car/pkg/carlisting/endpoints"
 	httptransport "github.com/go-kit/kit/transport/http"
 )
 
 func NewHTTPHandler(ep endpoints.Set) http.Handler {
+	database.ConnectDB()
+	database.DB.AutoMigrate(&internal.CarListing{})
+
 	m := http.NewServeMux()
 
 	m.Handle("/cars", httptransport.NewServer(
 		ep.GetEndpoint,
-		decodeHTTPServiceStatusRequest,
+		decodeHTTPGetRequest,
 		encodeResponse,
 	))
 
-	m.Handle("/list-new-car")
+	m.Handle("/cars/create", httptransport.NewServer(
+		ep.CreateListingEndpoint,
+		decodeHTTPCreateListingRequest,
+		encodeResponse,
+	))
+
+	m.Handle("/cars/update", httptransport.NewServer(
+		ep.UpdateListingEndpoint,
+		decodeHTTPUpdateListingRequest,
+		encodeResponse,
+	))
 
 	return m
 }
@@ -26,7 +41,6 @@ func NewHTTPHandler(ep endpoints.Set) http.Handler {
 func decodeHTTPGetRequest(_ context.Context, r *http.Request) (interface{}, error) {
 	var req endpoints.GetRequest
 	if r.ContentLength == 0 {
-		logger.Log("Get request with no body")
 		return req, nil
 	}
 	err := json.NewDecoder(r.Body).Decode(&req)
@@ -36,8 +50,8 @@ func decodeHTTPGetRequest(_ context.Context, r *http.Request) (interface{}, erro
 	return req, nil
 }
 
-func decodeHTTPStatusRequest(ctx context.Context, r *http.Request) (interface{}, error) {
-	var req endpoints.StatusRequest
+func decodeHTTPCreateListingRequest(ctx context.Context, r *http.Request) (interface{}, error) {
+	var req endpoints.CreateListingRequest
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
 		return nil, err
@@ -45,26 +59,12 @@ func decodeHTTPStatusRequest(ctx context.Context, r *http.Request) (interface{},
 	return req, nil
 }
 
-func decodeHTTPWatermarkRequest(_ context.Context, r *http.Request) (interface{}, error) {
-	var req endpoints.WatermarkRequest
+func decodeHTTPUpdateListingRequest(_ context.Context, r *http.Request) (interface{}, error) {
+	var req endpoints.UpdateListingRequest
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
 		return nil, err
 	}
-	return req, nil
-}
-
-func decodeHTTPAddDocumentRequest(_ context.Context, r *http.Request) (interface{}, error) {
-	var req endpoints.AddDocumentRequest
-	err := json.NewDecoder(r.Body).Decode(&req)
-	if err != nil {
-		return nil, err
-	}
-	return req, nil
-}
-
-func decodeHTTPServiceStatusRequest(_ context.Context, _ *http.Request) (interface{}, error) {
-	var req endpoints.ServiceStatusRequest
 	return req, nil
 }
 
@@ -79,10 +79,10 @@ func encodeResponse(ctx context.Context, w http.ResponseWriter, response interfa
 func encodeError(_ context.Context, err error, w http.ResponseWriter) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	switch err {
-	case util.ErrUnknown:
-		w.WriteHeader(http.StatusNotFound)
-	case util.ErrInvalidArgument:
-		w.WriteHeader(http.StatusBadRequest)
+	// case util.ErrUnknown:
+	// 	w.WriteHeader(http.StatusNotFound)
+	// case util.ErrInvalidArgument:
+	// 	w.WriteHeader(http.StatusBadRequest)
 	default:
 		w.WriteHeader(http.StatusInternalServerError)
 	}

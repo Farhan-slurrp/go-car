@@ -4,27 +4,29 @@ import (
 	"context"
 	"errors"
 
+	"github.com/Farhan-slurrp/go-car/internal"
 	"github.com/Farhan-slurrp/go-car/pkg/carlisting"
 	"github.com/go-kit/kit/endpoint"
 )
 
 type Set struct {
-	GetEndpoint             endpoint.Endpoint
-	ListNewCarEndpoint      endpoint.Endpoint
-	SetAvailabilityEndpoint endpoint.Endpoint
+	GetEndpoint           endpoint.Endpoint
+	CreateListingEndpoint endpoint.Endpoint
+	UpdateListingEndpoint endpoint.Endpoint
 }
 
 func NewEndpointSet(svc carlisting.Service) Set {
 	return Set{
-		GetEndpoint:             MakeGetEndpoint(svc),
-		ListNewCarEndpoint:      MakeListNewCarEndpoint(svc),
-		SetAvailabilityEndpoint: MakeSetAvailabilityEndpoint(svc),
+		GetEndpoint:           MakeGetEndpoint(svc),
+		CreateListingEndpoint: MakeCreateListingEndpoint(svc),
+		UpdateListingEndpoint: MakeUpdateListingEndpoint(svc),
 	}
 }
 
 func MakeGetEndpoint(svc carlisting.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		docs, err := svc.Get(ctx)
+		req := request.(GetRequest)
+		docs, err := svc.Get(ctx, req.Filters...)
 		if err != nil {
 			return GetResponse{docs, err.Error()}, nil
 		}
@@ -32,58 +34,58 @@ func MakeGetEndpoint(svc carlisting.Service) endpoint.Endpoint {
 	}
 }
 
-func MakeListNewCarEndpoint(svc carlisting.Service) endpoint.Endpoint {
+func MakeCreateListingEndpoint(svc carlisting.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(ListNewCarRequest)
-		Int, err := svc.ListNewCar(ctx, req.B)
+		req := request.(CreateListingRequest)
+		Int, err := svc.CreateListing(ctx, req.B)
 		if err != nil {
-			return GetResponse{Int, err.Error()}, nil
+			return CreateListingResponse{Int, err.Error()}, nil
 		}
-		return GetResponse{Int, ""}, nil
+		return CreateListingResponse{Int, ""}, nil
 	}
 }
 
-func MakeSetAvailabilityEndpoint(svc carlisting.Service) endpoint.Endpoint {
+func MakeUpdateListingEndpoint(svc carlisting.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(SetAvailabilityRequest)
-		Int, err := svc.SetAvailability(ctx, req.Dates)
+		req := request.(UpdateListingRequest)
+		Int, err := svc.UpdateListing(ctx, req.Dates)
 		if err != nil {
-			return GetResponse{Int, err.Error()}, nil
+			return UpdateListingResponse{Int, err.Error()}, nil
 		}
-		return GetResponse{Int, ""}, nil
+		return UpdateListingResponse{Int, ""}, nil
 	}
 }
 
-func (s *Set) Get(ctx context.Context) (int, error) {
-	resp, err := s.GetEndpoint(ctx, GetRequest)
+func (s *Set) Get(ctx context.Context, filters ...internal.Filter) ([]internal.CarListing, error) {
+	resp, err := s.GetEndpoint(ctx, GetRequest{Filters: filters})
 	if err != nil {
-		return 0, err
+		return []internal.CarListing{}, err
 	}
 	getResp := resp.(GetResponse)
 	if getResp.Err != "" {
-		return 0, errors.New(getResp.Err)
+		return []internal.CarListing{}, errors.New(getResp.Err)
 	}
-	return getResp.Int, nil
+	return getResp.Cars, nil
 }
 
-func (s *Set) ListNewCar(ctx context.Context) (int, error) {
-	resp, err := s.ListNewCarEndpoint(ctx, ListNewCarRequest{B: int})
+func (s *Set) CreateListing(ctx context.Context, B int) (int, error) {
+	resp, err := s.CreateListingEndpoint(ctx, CreateListingRequest{B: B})
 	if err != nil {
 		return 0, err
 	}
-	listNewCarResp := resp.(ListNewCarResponse)
+	listNewCarResp := resp.(CreateListingResponse)
 	if listNewCarResp.Err != "" {
 		return 0, errors.New(listNewCarResp.Err)
 	}
 	return listNewCarResp.Int, nil
 }
 
-func (s *Set) SetAvailability(ctx context.Context) (int, error) {
-	resp, err := s.SetAvailabilityEndpoint(ctx, SetAvailabilityRequest{Dates: string})
+func (s *Set) UpdateListing(ctx context.Context, dates string) (int, error) {
+	resp, err := s.UpdateListingEndpoint(ctx, UpdateListingRequest{Dates: dates})
 	if err != nil {
 		return 0, err
 	}
-	setAvailabilityResp := resp.(SetAvailabilityResponse)
+	setAvailabilityResp := resp.(UpdateListingResponse)
 	if setAvailabilityResp.Err != "" {
 		return 0, errors.New(setAvailabilityResp.Err)
 	}
