@@ -1,14 +1,18 @@
 package internal
 
-import "gorm.io/gorm"
+import (
+	"time"
+
+	"gorm.io/gorm"
+)
 
 type CarListing struct {
 	gorm.Model
-	CarModel      string  `json:"model"`
-	DailyPrice    float64 `json:"dailyPrice"`
-	AvailableFrom string  `json:"availableFrom,omitempty"`
-	AvailableTo   string  `json:"availableTo,omitempty"`
-	OwnerId       string  `json:"ownerId"`
+	CarModel      string    `json:"model"`
+	DailyPrice    float64   `json:"daily_price"`
+	AvailableFrom time.Time `json:"available_from,omitempty"`
+	AvailableTo   time.Time `json:"available_to,omitempty"`
+	OwnerId       string    `json:"owner_id"`
 }
 
 type Filter struct {

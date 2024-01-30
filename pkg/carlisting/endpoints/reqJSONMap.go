@@ -12,19 +12,19 @@ type GetResponse struct {
 }
 
 type CreateListingRequest struct {
-	B int `json:"B"`
+	CarListing *internal.CarListing `json:"new_car_listing"`
 }
 
 type CreateListingResponse struct {
-	Int int    `json:"Int"`
+	ID  uint   `json:"id"`
 	Err string `json:"err,omitempty"`
 }
 
 type UpdateListingRequest struct {
-	Dates string `json:"dates"`
+	CarListing *internal.CarListing `json:"new_car_listing"`
 }
 
 type UpdateListingResponse struct {
-	Int int    `json:"Int"`
-	Err string `json:"err,omitempty"`
+	Message string `json:"message"`
+	Err     string `json:"err,omitempty"`
 }

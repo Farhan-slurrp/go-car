@@ -37,7 +37,7 @@ func MakeGetEndpoint(svc carlisting.Service) endpoint.Endpoint {
 func MakeCreateListingEndpoint(svc carlisting.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(CreateListingRequest)
-		Int, err := svc.CreateListing(ctx, req.B)
+		Int, err := svc.CreateListing(ctx, req.CarListing)
 		if err != nil {
 			return CreateListingResponse{Int, err.Error()}, nil
 		}
@@ -48,7 +48,7 @@ func MakeCreateListingEndpoint(svc carlisting.Service) endpoint.Endpoint {
 func MakeUpdateListingEndpoint(svc carlisting.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(UpdateListingRequest)
-		Int, err := svc.UpdateListing(ctx, req.Dates)
+		Int, err := svc.UpdateListing(ctx, req.CarListing)
 		if err != nil {
 			return UpdateListingResponse{Int, err.Error()}, nil
 		}
@@ -68,8 +68,8 @@ func (s *Set) Get(ctx context.Context, filters ...internal.Filter) ([]internal.C
 	return getResp.Cars, nil
 }
 
-func (s *Set) CreateListing(ctx context.Context, B int) (int, error) {
-	resp, err := s.CreateListingEndpoint(ctx, CreateListingRequest{B: B})
+func (s *Set) CreateListing(ctx context.Context, carListing *internal.CarListing) (uint, error) {
+	resp, err := s.CreateListingEndpoint(ctx, CreateListingRequest{CarListing: carListing})
 	if err != nil {
 		return 0, err
 	}
@@ -77,17 +77,17 @@ func (s *Set) CreateListing(ctx context.Context, B int) (int, error) {
 	if listNewCarResp.Err != "" {
 		return 0, errors.New(listNewCarResp.Err)
 	}
-	return listNewCarResp.Int, nil
+	return listNewCarResp.ID, nil
 }
 
-func (s *Set) UpdateListing(ctx context.Context, dates string) (int, error) {
-	resp, err := s.UpdateListingEndpoint(ctx, UpdateListingRequest{Dates: dates})
+func (s *Set) UpdateListing(ctx context.Context, carListing *internal.CarListing) (string, error) {
+	resp, err := s.UpdateListingEndpoint(ctx, UpdateListingRequest{CarListing: carListing})
 	if err != nil {
-		return 0, err
+		return "", err
 	}
 	setAvailabilityResp := resp.(UpdateListingResponse)
 	if setAvailabilityResp.Err != "" {
-		return 0, errors.New(setAvailabilityResp.Err)
+		return "", errors.New(setAvailabilityResp.Err)
 	}
-	return setAvailabilityResp.Int, nil
+	return setAvailabilityResp.Message, nil
 }
