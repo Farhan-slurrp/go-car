@@ -8,7 +8,7 @@ import (
 
 type CarListing struct {
 	gorm.Model
-	CarModel      string    `json:"model"`
+	CarModel      string    `json:"car_model"`
 	DailyPrice    float64   `json:"daily_price"`
 	AvailableFrom time.Time `json:"available_from,omitempty"`
 	AvailableTo   time.Time `json:"available_to,omitempty"`

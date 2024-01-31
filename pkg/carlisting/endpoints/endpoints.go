@@ -10,27 +10,27 @@ import (
 )
 
 type Set struct {
-	GetEndpoint           endpoint.Endpoint
-	CreateListingEndpoint endpoint.Endpoint
-	UpdateListingEndpoint endpoint.Endpoint
+	GetCarListingsEndpoint endpoint.Endpoint
+	CreateListingEndpoint  endpoint.Endpoint
+	UpdateListingEndpoint  endpoint.Endpoint
 }
 
 func NewEndpointSet(svc carlisting.Service) Set {
 	return Set{
-		GetEndpoint:           MakeGetEndpoint(svc),
-		CreateListingEndpoint: MakeCreateListingEndpoint(svc),
-		UpdateListingEndpoint: MakeUpdateListingEndpoint(svc),
+		GetCarListingsEndpoint: MakeGetCarListingsEndpoint(svc),
+		CreateListingEndpoint:  MakeCreateListingEndpoint(svc),
+		UpdateListingEndpoint:  MakeUpdateListingEndpoint(svc),
 	}
 }
 
-func MakeGetEndpoint(svc carlisting.Service) endpoint.Endpoint {
+func MakeGetCarListingsEndpoint(svc carlisting.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(GetRequest)
-		docs, err := svc.Get(ctx, req.Filters...)
+		req := request.(GetCarListingsRequest)
+		docs, err := svc.GetCarListings(ctx, req.Filters...)
 		if err != nil {
-			return GetResponse{docs, err.Error()}, nil
+			return GetCarListingsResponse{docs, err.Error()}, nil
 		}
-		return GetResponse{docs, ""}, nil
+		return GetCarListingsResponse{docs, ""}, nil
 	}
 }
 
@@ -56,12 +56,12 @@ func MakeUpdateListingEndpoint(svc carlisting.Service) endpoint.Endpoint {
 	}
 }
 
-func (s *Set) Get(ctx context.Context, filters ...internal.Filter) ([]internal.CarListing, error) {
-	resp, err := s.GetEndpoint(ctx, GetRequest{Filters: filters})
+func (s *Set) GetCarListings(ctx context.Context, filters ...internal.Filter) ([]internal.CarListing, error) {
+	resp, err := s.GetCarListingsEndpoint(ctx, GetCarListingsRequest{Filters: filters})
 	if err != nil {
 		return []internal.CarListing{}, err
 	}
-	getResp := resp.(GetResponse)
+	getResp := resp.(GetCarListingsResponse)
 	if getResp.Err != "" {
 		return []internal.CarListing{}, errors.New(getResp.Err)
 	}

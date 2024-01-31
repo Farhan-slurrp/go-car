@@ -2,11 +2,11 @@ package endpoints
 
 import "github.com/Farhan-slurrp/go-car/internal"
 
-type GetRequest struct {
+type GetCarListingsRequest struct {
 	Filters []internal.Filter `json:"filters"`
 }
 
-type GetResponse struct {
+type GetCarListingsResponse struct {
 	Cars []internal.CarListing `json:"cars"`
 	Err  string                `json:"err,omitempty"`
 }

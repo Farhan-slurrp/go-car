@@ -18,7 +18,7 @@ func NewHTTPHandler(ep endpoints.Set) http.Handler {
 	m := http.NewServeMux()
 
 	m.Handle("/cars", httptransport.NewServer(
-		ep.GetEndpoint,
+		ep.GetCarListingsEndpoint,
 		decodeHTTPGetRequest,
 		encodeResponse,
 	))
@@ -39,7 +39,7 @@ func NewHTTPHandler(ep endpoints.Set) http.Handler {
 }
 
 func decodeHTTPGetRequest(_ context.Context, r *http.Request) (interface{}, error) {
-	var req endpoints.GetRequest
+	var req endpoints.GetCarListingsRequest
 	if r.ContentLength == 0 {
 		return req, nil
 	}
