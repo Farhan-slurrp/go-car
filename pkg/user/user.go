@@ -10,16 +10,12 @@ type userService struct{}
 
 func NewService() Service { return &userService{} }
 
-func (w *userService) Login(_ context.Context) (string, error) {
-
-	return "", nil
-}
-
-func (w *userService) Callback(_ context.Context) (string, error) {
-
-	return "", nil
-}
-func (w *userService) GetUserData(_ context.Context, id uint) (internal.User, error) {
+func (w *userService) GetUserData(_ context.Context, email string) (internal.User, error) {
 	user := internal.User{}
 	return user, nil
+}
+
+func (w *userService) UpdateUserData(_ context.Context, user internal.User) (uint, error) {
+
+	return 0, nil
 }

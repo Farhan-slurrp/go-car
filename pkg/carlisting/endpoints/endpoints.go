@@ -37,22 +37,22 @@ func MakeGetCarListingsEndpoint(svc carlisting.Service) endpoint.Endpoint {
 func MakeCreateListingEndpoint(svc carlisting.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(CreateListingRequest)
-		Int, err := svc.CreateListing(ctx, req.CarListing)
+		id, err := svc.CreateListing(ctx, req.CarListing)
 		if err != nil {
-			return CreateListingResponse{Int, err.Error()}, nil
+			return CreateListingResponse{id, err.Error()}, nil
 		}
-		return CreateListingResponse{Int, ""}, nil
+		return CreateListingResponse{id, ""}, nil
 	}
 }
 
 func MakeUpdateListingEndpoint(svc carlisting.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(UpdateListingRequest)
-		Int, err := svc.UpdateListing(ctx, req.CarListing)
+		message, err := svc.UpdateListing(ctx, req.CarListing)
 		if err != nil {
-			return UpdateListingResponse{Int, err.Error()}, nil
+			return UpdateListingResponse{message, err.Error()}, nil
 		}
-		return UpdateListingResponse{Int, ""}, nil
+		return UpdateListingResponse{message, ""}, nil
 	}
 }
 
@@ -85,9 +85,9 @@ func (s *Set) UpdateListing(ctx context.Context, carListing *internal.CarListing
 	if err != nil {
 		return "", err
 	}
-	setAvailabilityResp := resp.(UpdateListingResponse)
-	if setAvailabilityResp.Err != "" {
-		return "", errors.New(setAvailabilityResp.Err)
+	updateListingResp := resp.(UpdateListingResponse)
+	if updateListingResp.Err != "" {
+		return "", errors.New(updateListingResp.Err)
 	}
-	return setAvailabilityResp.Message, nil
+	return updateListingResp.Message, nil
 }

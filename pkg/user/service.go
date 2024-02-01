@@ -7,7 +7,6 @@ import (
 )
 
 type Service interface {
-	Login(ctx context.Context) (string, error)
-	Callback(ctx context.Context) (string, error)
-	GetUserData(ctx context.Context, id uint) (internal.User, error)
+	GetUserData(ctx context.Context, email string) (internal.User, error)
+	UpdateUserData(ctx context.Context, user internal.User) (uint, error)
 }
