@@ -139,7 +139,7 @@ Header:
 Login with google account
 
 
-#### `GET /user/:id`
+#### `GET /users/:id`
 
 Get User Data for the given id
 
@@ -158,7 +158,7 @@ Get User Data for the given id
 }
 ```
 
-#### `PUT or PATCH /user/:id/update`
+#### `PUT or PATCH /users/:id/update`
 Content-Type: application/json
 
 Update User Data for the given id
