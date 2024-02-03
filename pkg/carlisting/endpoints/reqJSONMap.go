@@ -12,7 +12,7 @@ type GetCarListingsResponse struct {
 }
 
 type CreateListingRequest struct {
-	CarListing *internal.CarListing `json:"new_car_listing"`
+	CarListing *internal.CarListing `json:"car_listing"`
 }
 
 type CreateListingResponse struct {
@@ -22,7 +22,7 @@ type CreateListingResponse struct {
 
 type UpdateListingRequest struct {
 	ID         string               `json:"id"`
-	CarListing *internal.CarListing `json:"new_car_listing"`
+	CarListing *internal.CarListing `json:"car_listing"`
 }
 
 type UpdateListingResponse struct {
