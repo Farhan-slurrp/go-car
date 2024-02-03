@@ -19,7 +19,7 @@ import (
 
 var (
 	ErrBadRouting = errors.New("inconsistent mapping between route and handler (programmer error)")
-	userHost = "https://caruserr-farhannurzi.koyeb.app/"
+	userHost = "https://caruserr-farhannurzi.koyeb.app/authorize/"
 )
 
 func NewHTTPHandler(ep endpoints.Set) http.Handler {
