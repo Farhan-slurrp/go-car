@@ -43,18 +43,32 @@ func (w *carListingService) GetCarListings(_ context.Context, filters ...interna
 }
 
 func (w *carListingService) CreateListing(_ context.Context, carListing *internal.CarListing) (uint, error) {
+	if carListing.CarModel == "" {
+		return 0, errors.New("data is incorrect")
+	}
 	newCarListing := carListing
 	database.DB.Create(&newCarListing)
 	return newCarListing.ID, nil
 }
 
-func (w *carListingService) UpdateListing(_ context.Context, carListing *internal.CarListing) (string, error) {
+func (w *carListingService) UpdateListing(_ context.Context, id string, carListing *internal.CarListing) (string, error) {
 	oldCarListing := *carListing
-	if result := database.DB.First(&oldCarListing); result.Error != nil {
+	if result := database.DB.First(&oldCarListing, "ID = ?", id); result.Error != nil {
 		fmt.Printf("%v", result)
 		return "", result.Error
 	}
-	oldCarListing = *carListing
+	if carListing.CarModel != "" {
+		oldCarListing.CarModel = carListing.CarModel
+	}
+	if carListing.DailyPrice != 0 {
+		oldCarListing.DailyPrice = carListing.DailyPrice
+	}
+	if !carListing.AvailableFrom.IsZero() {
+		oldCarListing.AvailableFrom = carListing.AvailableFrom
+	}
+	if !carListing.AvailableTo.IsZero() {
+		oldCarListing.AvailableTo = carListing.AvailableTo
+	}
 	database.DB.Save(&oldCarListing)
 	return "Data updated", nil
 }

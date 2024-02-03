@@ -7,6 +7,6 @@ import (
 )
 
 type Service interface {
-	GetUserData(ctx context.Context, email string) (internal.User, error)
-	UpdateUserData(ctx context.Context, user internal.User) (uint, error)
+	GetUserData(ctx context.Context, id string) (*internal.User, error)
+	UpdateUserData(ctx context.Context, id string, user *internal.User) (uint, error)
 }

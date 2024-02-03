@@ -12,7 +12,7 @@ type CarListing struct {
 	DailyPrice    float64   `json:"daily_price"`
 	AvailableFrom time.Time `json:"available_from,omitempty"`
 	AvailableTo   time.Time `json:"available_to,omitempty"`
-	OwnerId       string    `json:"owner_id"`
+	OwnerId       uint      `json:"owner_id"`
 }
 
 type Filter struct {

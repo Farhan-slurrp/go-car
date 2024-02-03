@@ -24,7 +24,7 @@ func NewEndpointSet(svc user.Service) Set {
 func MakeGetUserDataEndpoint(svc user.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(GetUserDataRequest)
-		user, err := svc.GetUserData(ctx, req.Email)
+		user, err := svc.GetUserData(ctx, req.ID)
 		if err != nil {
 			return GetUserDataResponse{user, err.Error()}, nil
 		}
@@ -35,7 +35,7 @@ func MakeGetUserDataEndpoint(svc user.Service) endpoint.Endpoint {
 func MakeUpdateUserDataEndpoint(svc user.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(UpdateUserDataRequest)
-		id, err := svc.UpdateUserData(ctx, req.User)
+		id, err := svc.UpdateUserData(ctx, req.ID, req.User)
 		if err != nil {
 			return UpdateUserDataResponse{id, err.Error()}, nil
 		}
@@ -43,21 +43,20 @@ func MakeUpdateUserDataEndpoint(svc user.Service) endpoint.Endpoint {
 	}
 }
 
-func (s *Set) GetUserData(ctx context.Context, email string) (internal.User, error) {
-	resp, err := s.GetUserDataEndpoint(ctx, GetUserDataRequest{Email: email})
-	user := internal.User{}
+func (s *Set) GetUserData(ctx context.Context, id string) (*internal.User, error) {
+	resp, err := s.GetUserDataEndpoint(ctx, GetUserDataRequest{ID: id})
 	if err != nil {
-		return user, err
+		return nil, err
 	}
 	getUserDataResp := resp.(GetUserDataResponse)
 	if getUserDataResp.Err != "" {
-		return user, errors.New(getUserDataResp.Err)
+		return nil, errors.New(getUserDataResp.Err)
 	}
 	return getUserDataResp.User, nil
 }
 
-func (s *Set) UpdateUserData(ctx context.Context, user internal.User) (uint, error) {
-	resp, err := s.UpdateUserDataEndpoint(ctx, UpdateUserDataRequest{User: user})
+func (s *Set) UpdateUserData(ctx context.Context, id string, user *internal.User) (uint, error) {
+	resp, err := s.UpdateUserDataEndpoint(ctx, UpdateUserDataRequest{ID: id, User: user})
 	if err != nil {
 		return 0, err
 	}

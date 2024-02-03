@@ -3,33 +3,43 @@ package transport
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
+	"os"
+	"strings"
 
+	"github.com/Farhan-slurrp/go-car/authentication"
 	"github.com/Farhan-slurrp/go-car/database"
 	"github.com/Farhan-slurrp/go-car/internal"
 	"github.com/Farhan-slurrp/go-car/pkg/carlisting/endpoints"
 	httptransport "github.com/go-kit/kit/transport/http"
+	"github.com/go-kit/log"
+	"github.com/gorilla/mux"
+)
+
+var (
+	ErrBadRouting = errors.New("inconsistent mapping between route and handler (programmer error)")
 )
 
 func NewHTTPHandler(ep endpoints.Set) http.Handler {
 	database.ConnectDB()
 	database.DB.AutoMigrate(&internal.CarListing{})
 
-	m := http.NewServeMux()
+	m := mux.NewRouter()
 
-	m.Handle("/cars", httptransport.NewServer(
+	m.Methods("GET", "POST").Path("/cars").Handler(httptransport.NewServer(
 		ep.GetCarListingsEndpoint,
 		decodeHTTPGetRequest,
 		encodeResponse,
 	))
 
-	m.Handle("/cars/create", httptransport.NewServer(
+	m.Methods("POST").Path("/cars/create").Handler(httptransport.NewServer(
 		ep.CreateListingEndpoint,
 		decodeHTTPCreateListingRequest,
 		encodeResponse,
 	))
 
-	m.Handle("/cars/update", httptransport.NewServer(
+	m.Methods("PATCH", "PUT").Path("/cars/{id}/update").Handler(httptransport.NewServer(
 		ep.UpdateListingEndpoint,
 		decodeHTTPUpdateListingRequest,
 		encodeResponse,
@@ -51,16 +61,47 @@ func decodeHTTPGetRequest(_ context.Context, r *http.Request) (interface{}, erro
 }
 
 func decodeHTTPCreateListingRequest(ctx context.Context, r *http.Request) (interface{}, error) {
-	var req endpoints.CreateListingRequest
-	err := json.NewDecoder(r.Body).Decode(&req)
-	if err != nil {
-		return nil, err
+	reqToken := r.Header.Get("Authorization")
+	if reqToken == "" {
+		return nil, errors.New("authorization required")
 	}
+	splitToken := strings.Split(reqToken, "Bearer ")
+	reqToken = splitToken[1]
+	userData, err := authentication.GetUserDataFromGoogle(reqToken)
+	if err != nil {
+		return nil, errors.New("authorization failed")
+	}
+	user := internal.User{}
+	userResp := internal.UserResponse{}
+	userErr := json.Unmarshal(userData, &userResp)
+	if userErr != nil {
+		return nil, userErr
+	}
+
+	database.DB.Find(&user, "email = ?", userResp.Email)
+
+	if user.Role != "host" {
+		return nil, errors.New("method not allowed")
+	}
+
+	var req endpoints.CreateListingRequest
+	reqErr := json.NewDecoder(r.Body).Decode(&req)
+	if reqErr != nil {
+		return nil, reqErr
+	}
+	req.CarListing.OwnerId = user.ID
 	return req, nil
 }
 
 func decodeHTTPUpdateListingRequest(_ context.Context, r *http.Request) (interface{}, error) {
+	vars := mux.Vars(r)
+	id, ok := vars["id"]
+	if !ok {
+		return nil, ErrBadRouting
+	}
+
 	var req endpoints.UpdateListingRequest
+	req.ID = id
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
 		return nil, err
@@ -89,4 +130,11 @@ func encodeError(_ context.Context, err error, w http.ResponseWriter) {
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"error": err.Error(),
 	})
+}
+
+var logger log.Logger
+
+func init() {
+	logger = log.NewLogfmtLogger(log.NewSyncWriter(os.Stderr))
+	logger = log.With(logger, "ts", log.DefaultTimestampUTC)
 }

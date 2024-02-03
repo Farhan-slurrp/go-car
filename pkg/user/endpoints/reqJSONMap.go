@@ -3,19 +3,20 @@ package endpoints
 import "github.com/Farhan-slurrp/go-car/internal"
 
 type GetUserDataRequest struct {
-	Email string `json:"email"`
+	ID string `json:"id"`
 }
 
 type GetUserDataResponse struct {
-	User internal.User `json:"user"`
-	Err  string        `json:"err,omitempty"`
+	User *internal.User `json:"user,omitempty"`
+	Err  string         `json:"error,omitempty"`
 }
 
 type UpdateUserDataRequest struct {
-	User internal.User `json:"user"`
+	ID   string         `json:"id"`
+	User *internal.User `json:"user"`
 }
 
 type UpdateUserDataResponse struct {
 	Id  uint   `json:"id"`
-	Err string `json:"err,omitempty"`
+	Err string `json:"error,omitempty"`
 }

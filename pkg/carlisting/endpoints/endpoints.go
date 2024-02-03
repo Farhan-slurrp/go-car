@@ -48,7 +48,7 @@ func MakeCreateListingEndpoint(svc carlisting.Service) endpoint.Endpoint {
 func MakeUpdateListingEndpoint(svc carlisting.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(UpdateListingRequest)
-		message, err := svc.UpdateListing(ctx, req.CarListing)
+		message, err := svc.UpdateListing(ctx, req.ID, req.CarListing)
 		if err != nil {
 			return UpdateListingResponse{message, err.Error()}, nil
 		}
@@ -80,8 +80,8 @@ func (s *Set) CreateListing(ctx context.Context, carListing *internal.CarListing
 	return listNewCarResp.ID, nil
 }
 
-func (s *Set) UpdateListing(ctx context.Context, carListing *internal.CarListing) (string, error) {
-	resp, err := s.UpdateListingEndpoint(ctx, UpdateListingRequest{CarListing: carListing})
+func (s *Set) UpdateListing(ctx context.Context, id string, carListing *internal.CarListing) (string, error) {
+	resp, err := s.UpdateListingEndpoint(ctx, UpdateListingRequest{ID: id, CarListing: carListing})
 	if err != nil {
 		return "", err
 	}

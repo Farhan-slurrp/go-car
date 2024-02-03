@@ -2,18 +2,23 @@ package transport
 
 import (
 	"context"
-	"crypto/rand"
-	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
-	"io/ioutil"
 	"net/http"
-	"time"
 
+	"github.com/gorilla/mux"
+
+	"github.com/Farhan-slurrp/go-car/authentication"
 	"github.com/Farhan-slurrp/go-car/database"
 	"github.com/Farhan-slurrp/go-car/internal"
 	"github.com/Farhan-slurrp/go-car/internal/config"
 	"github.com/Farhan-slurrp/go-car/pkg/user/endpoints"
+	httptransport "github.com/go-kit/kit/transport/http"
+)
+
+var (
+	ErrBadRouting = errors.New("inconsistent mapping between route and handler (programmer error)")
 )
 
 func NewHTTPHandler(ep endpoints.Set) http.Handler {
@@ -21,35 +26,33 @@ func NewHTTPHandler(ep endpoints.Set) http.Handler {
 	database.DB.AutoMigrate(&internal.User{})
 	config.GoogleConfig()
 
-	m := http.NewServeMux()
+	m := mux.NewRouter()
 
 	m.HandleFunc("/login", handleLogin)
 	m.HandleFunc("/callback", handleCallback)
 
+	m.Methods("GET").Path("/users/{id}").Handler(httptransport.NewServer(
+		ep.GetUserDataEndpoint,
+		decodeHTTPGetUserDataRequest,
+		encodeResponse,
+	))
+
+	m.Methods("PATCH", "PUT").Path("/users/{id}/update").Handler(httptransport.NewServer(
+		ep.UpdateUserDataEndpoint,
+		decodeHTTPUpdateUserDataRequest,
+		encodeResponse,
+	))
+
 	return m
 }
 
-func generateStateOauthCookie(w http.ResponseWriter) string {
-	var expiration = time.Now().Add(365 * 24 * time.Hour)
-
-	b := make([]byte, 16)
-	rand.Read(b)
-	state := base64.URLEncoding.EncodeToString(b)
-	cookie := http.Cookie{Name: "oauthstate", Value: state, Expires: expiration}
-	http.SetCookie(w, &cookie)
-
-	return state
-}
-
 func handleLogin(w http.ResponseWriter, r *http.Request) {
-	// Create oauthState cookie
-	oauthState := generateStateOauthCookie(w)
+	oauthState := authentication.GenerateStateOauthCookie(w)
 	u := config.AppConfig.GoogleLoginConfig.AuthCodeURL(oauthState)
 	http.Redirect(w, r, u, http.StatusTemporaryRedirect)
 }
 
 func handleCallback(w http.ResponseWriter, r *http.Request) {
-	// Read oauthState from Cookie
 	oauthState, _ := r.Cookie("oauthstate")
 
 	if r.FormValue("state") != oauthState.Value {
@@ -57,14 +60,18 @@ func handleCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data, err := getUserDataFromGoogle(r.FormValue("code"))
+	code := r.FormValue("code")
+	token, err := authentication.GetToken(code)
+	if err != nil {
+		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
+		return
+	}
+	data, err := authentication.GetUserDataFromGoogle(token.AccessToken)
 	if err != nil {
 		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 		return
 	}
 
-	// GetOrCreate User in your db.
-	// Redirect or response with a token.
 	user := internal.User{}
 	userResp := internal.UserResponse{}
 	err = json.Unmarshal(data, &userResp)
@@ -78,26 +85,35 @@ func handleCallback(w http.ResponseWriter, r *http.Request) {
 	user.Name = userResp.Name
 	user.Role = "user"
 	database.DB.Create(&user)
-	fmt.Fprintf(w, "UserInfo: %s\n", user)
+
+	fmt.Fprintf(w, "Access token: %s\n", token.AccessToken)
 }
 
-func getUserDataFromGoogle(code string) ([]byte, error) {
-	// Use code to get token and get user info from Google.
+func decodeHTTPGetUserDataRequest(_ context.Context, r *http.Request) (interface{}, error) {
+	vars := mux.Vars(r)
+	id, ok := vars["id"]
+	if !ok {
+		return nil, ErrBadRouting
+	}
 
-	token, err := config.AppConfig.GoogleLoginConfig.Exchange(context.Background(), code)
-	if err != nil {
-		return nil, fmt.Errorf("code exchange wrong: %s", err.Error())
+	return endpoints.GetUserDataRequest{ID: id}, nil
+}
+
+func decodeHTTPUpdateUserDataRequest(_ context.Context, r *http.Request) (interface{}, error) {
+	vars := mux.Vars(r)
+	id, ok := vars["id"]
+	if !ok {
+		return nil, ErrBadRouting
 	}
-	response, err := http.Get("https://www.googleapis.com/oauth2/v2/userinfo?access_token=" + token.AccessToken)
+
+	var req endpoints.UpdateUserDataRequest
+	req.ID = id
+	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
-		return nil, fmt.Errorf("failed getting user info: %s", err.Error())
+		return nil, err
 	}
-	defer response.Body.Close()
-	userData, err := ioutil.ReadAll(response.Body)
-	if err != nil {
-		return nil, fmt.Errorf("failed read response: %s", err.Error())
-	}
-	return userData, nil
+
+	return req, nil
 }
 
 func encodeResponse(ctx context.Context, w http.ResponseWriter, response interface{}) error {
