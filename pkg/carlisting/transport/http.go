@@ -4,11 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 	"os"
 	"strings"
 
-	"github.com/Farhan-slurrp/go-car/authentication"
 	"github.com/Farhan-slurrp/go-car/database"
 	"github.com/Farhan-slurrp/go-car/internal"
 	"github.com/Farhan-slurrp/go-car/pkg/carlisting/endpoints"
@@ -67,19 +67,23 @@ func decodeHTTPCreateListingRequest(ctx context.Context, r *http.Request) (inter
 	}
 	splitToken := strings.Split(reqToken, "Bearer ")
 	reqToken = splitToken[1]
-	userData, err := authentication.GetUserDataFromGoogle(reqToken)
-	if err != nil {
-		return nil, errors.New("authorization failed")
-	}
 	user := internal.User{}
-	userResp := internal.UserResponse{}
-	userErr := json.Unmarshal(userData, &userResp)
+	authorizeResp := internal.AuthorizeResponse{}
+	resp, userErr := http.Get("http://localhost:8080/authorize/" + reqToken)
 	if userErr != nil {
 		return nil, userErr
 	}
+	defer resp.Body.Close()
+	data, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, errors.New("authorization required")
+	}
+	err = json.Unmarshal(data, &authorizeResp)
+	if err != nil {
+		return nil, errors.New("please log in")
+	}
 
-	database.DB.Find(&user, "email = ?", userResp.Email)
-
+	user = *authorizeResp.User
 	if user.Role != "host" {
 		return nil, errors.New("method not allowed")
 	}
@@ -100,9 +104,36 @@ func decodeHTTPUpdateListingRequest(_ context.Context, r *http.Request) (interfa
 		return nil, ErrBadRouting
 	}
 
+	reqToken := r.Header.Get("Authorization")
+	if reqToken == "" {
+		return nil, errors.New("authorization required")
+	}
+	splitToken := strings.Split(reqToken, "Bearer ")
+	reqToken = splitToken[1]
+	user := internal.User{}
+	authorizeResp := internal.AuthorizeResponse{}
+	resp, userErr := http.Get("http://localhost:8080/authorize/" + reqToken)
+	if userErr != nil {
+		return nil, userErr
+	}
+	defer resp.Body.Close()
+	data, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, errors.New("authorization required")
+	}
+	authErr := json.Unmarshal(data, &authorizeResp)
+	if authErr != nil {
+		return nil, errors.New("please log in")
+	}
+
+	user = *authorizeResp.User
+	if user.Role != "host" {
+		return nil, errors.New("method not allowed")
+	}
+
 	var req endpoints.UpdateListingRequest
 	req.ID = id
-	err := json.NewDecoder(r.Body).Decode(&req)
+	err = json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
 		return nil, err
 	}

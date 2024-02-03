@@ -37,6 +37,12 @@ func NewHTTPHandler(ep endpoints.Set) http.Handler {
 		encodeResponse,
 	))
 
+	m.Methods("GET").Path("/authorize/{token}").Handler(httptransport.NewServer(
+		ep.AuthorizeUserTokenEndpoint,
+		decodeHTTPAuthorizeUserTokenRequest,
+		encodeResponse,
+	))
+
 	m.Methods("PATCH", "PUT").Path("/users/{id}/update").Handler(httptransport.NewServer(
 		ep.UpdateUserDataEndpoint,
 		decodeHTTPUpdateUserDataRequest,
@@ -97,6 +103,16 @@ func decodeHTTPGetUserDataRequest(_ context.Context, r *http.Request) (interface
 	}
 
 	return endpoints.GetUserDataRequest{ID: id}, nil
+}
+
+func decodeHTTPAuthorizeUserTokenRequest(_ context.Context, r *http.Request) (interface{}, error) {
+	vars := mux.Vars(r)
+	token, ok := vars["token"]
+	if !ok {
+		return nil, ErrBadRouting
+	}
+
+	return endpoints.AuthorizeUserTokenRequest{Token: token}, nil
 }
 
 func decodeHTTPUpdateUserDataRequest(_ context.Context, r *http.Request) (interface{}, error) {

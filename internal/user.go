@@ -15,3 +15,7 @@ type UserResponse struct {
 	Name  string `json:"name"`
 	Email string `json:"email"`
 }
+
+type AuthorizeResponse struct {
+	User *User `json:"user",omitempty`
+}

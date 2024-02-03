@@ -10,14 +10,16 @@ import (
 )
 
 type Set struct {
-	GetUserDataEndpoint    endpoint.Endpoint
-	UpdateUserDataEndpoint endpoint.Endpoint
+	GetUserDataEndpoint        endpoint.Endpoint
+	AuthorizeUserTokenEndpoint endpoint.Endpoint
+	UpdateUserDataEndpoint     endpoint.Endpoint
 }
 
 func NewEndpointSet(svc user.Service) Set {
 	return Set{
-		GetUserDataEndpoint:    MakeGetUserDataEndpoint(svc),
-		UpdateUserDataEndpoint: MakeUpdateUserDataEndpoint(svc),
+		GetUserDataEndpoint:        MakeGetUserDataEndpoint(svc),
+		AuthorizeUserTokenEndpoint: MakeAuthorizeUserTokenEndpoint(svc),
+		UpdateUserDataEndpoint:     MakeUpdateUserDataEndpoint(svc),
 	}
 }
 
@@ -29,6 +31,17 @@ func MakeGetUserDataEndpoint(svc user.Service) endpoint.Endpoint {
 			return GetUserDataResponse{user, err.Error()}, nil
 		}
 		return GetUserDataResponse{user, ""}, nil
+	}
+}
+
+func MakeAuthorizeUserTokenEndpoint(svc user.Service) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(AuthorizeUserTokenRequest)
+		user, err := svc.AuthorizeUserToken(ctx, req.Token)
+		if err != nil {
+			return AuthorizeUserTokenResponse{user, err.Error()}, nil
+		}
+		return AuthorizeUserTokenResponse{user, ""}, nil
 	}
 }
 
@@ -53,6 +66,18 @@ func (s *Set) GetUserData(ctx context.Context, id string) (*internal.User, error
 		return nil, errors.New(getUserDataResp.Err)
 	}
 	return getUserDataResp.User, nil
+}
+
+func (s *Set) AuthorizeUserToken(ctx context.Context, token string) (*internal.User, error) {
+	resp, err := s.GetUserDataEndpoint(ctx, AuthorizeUserTokenRequest{Token: token})
+	if err != nil {
+		return nil, err
+	}
+	authorizeuserTokenResp := resp.(GetUserDataResponse)
+	if authorizeuserTokenResp.Err != "" {
+		return nil, errors.New(authorizeuserTokenResp.Err)
+	}
+	return authorizeuserTokenResp.User, nil
 }
 
 func (s *Set) UpdateUserData(ctx context.Context, id string, user *internal.User) (uint, error) {
