@@ -19,6 +19,7 @@ import (
 
 var (
 	ErrBadRouting = errors.New("inconsistent mapping between route and handler (programmer error)")
+	userHost = "https://caruserr-farhannurzi.koyeb.app/"
 )
 
 func NewHTTPHandler(ep endpoints.Set) http.Handler {
@@ -69,7 +70,7 @@ func decodeHTTPCreateListingRequest(ctx context.Context, r *http.Request) (inter
 	reqToken = splitToken[1]
 	user := internal.User{}
 	authorizeResp := internal.AuthorizeResponse{}
-	resp, userErr := http.Get("http://localhost:8080/authorize/" + reqToken)
+	resp, userErr := http.Get(userHost + reqToken)
 	if userErr != nil {
 		return nil, userErr
 	}
@@ -112,7 +113,7 @@ func decodeHTTPUpdateListingRequest(_ context.Context, r *http.Request) (interfa
 	reqToken = splitToken[1]
 	user := internal.User{}
 	authorizeResp := internal.AuthorizeResponse{}
-	resp, userErr := http.Get("http://localhost:8080/authorize/" + reqToken)
+	resp, userErr := http.Get(userHost + reqToken)
 	if userErr != nil {
 		return nil, userErr
 	}
