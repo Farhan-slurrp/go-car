@@ -23,6 +23,8 @@ A microservices architecture for managing car listings and user information.
 
 ## API Documentation
 
+[![Run in Postman](https://run.pstmn.io/button.svg)](https://app.getpostman.com/run-collection/13986565-2c1b7604-c8e4-4cb9-98b9-4e29fba6e0d2?action=collection%2Ffork&collection-url=entityId%3D13986565-2c1b7604-c8e4-4cb9-98b9-4e29fba6e0d2%26entityType%3Dcollection%26workspaceId%3D6d306a02-95d8-44fd-b908-a84683a6369f)
+
 ### Car Listing Service
 
 #### `GET /cars`
