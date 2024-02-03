@@ -38,10 +38,10 @@ Retrieve the list of car listings based on keys values in the filter
 ```
 {
   "filters": [
-    { :key": "car_model", "value": "Honda" },
-    { :key": "daily_price", "value": "100" },
-    { :key": "available_from", "value": "2024-02-03T07:14:37.216Z" },
-    { :key": "available_to", "value": "2024-02-06T07:14:37.216Z" },
+    { "key": "car_model", "value": "Honda" },
+    { "key": "daily_price", "value": "100" },
+    { "key": "available_from", "value": "2024-02-03T07:14:37.216Z" },
+    { "key": "available_to", "value": "2024-02-06T07:14:37.216Z" },
   ]
 }
 ```
