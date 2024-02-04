@@ -209,3 +209,8 @@ Get the user info for the given token
 
 ### User Table
 ![image](https://github.com/Farhan-slurrp/go-car/assets/58872254/2223b19f-bfbc-47c2-ad81-31996b8c6422)
+
+### Architecture
+![image](https://github.com/Farhan-slurrp/go-car/assets/58872254/ebf78226-7db9-49c5-8e7d-0413ae8ee2aa)
+
+
